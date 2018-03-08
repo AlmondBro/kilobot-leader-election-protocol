@@ -15,8 +15,6 @@
     REGISTER_USERDATA(USERDATA)
 #endif
 
-
-
 char isQueueFull()
 {
     return (mydata->tail +1) % QUEUE == mydata->head;
@@ -70,7 +68,6 @@ char in_interval(uint8_t distance)
     return 0;
 }
 
-//
 char is_stabilized()
 {
     uint8_t i=0,j=0;
@@ -191,11 +188,9 @@ void recv_sharing(uint8_t *payload, uint8_t distance)
             i = mydata->num_neighbors;
             mydata->num_neighbors++;
             mydata->nearest_neighbors[i].num = 0;
-            
         }
     }
 
-    
     mydata->nearest_neighbors[i].id = payload[ID];
     mydata->nearest_neighbors[i].right_id = payload[RIGHT_ID];
     mydata->nearest_neighbors[i].left_id = payload[LEFT_ID];
@@ -237,7 +232,6 @@ void recv_joining(uint8_t *payload)
     {
 	    mydata->my_left = payload[SENDER];
     }
-
 
     // Creates a "master" bot upon ring creation. 
     // Also boolean switch for master
@@ -282,32 +276,50 @@ void recv_move(uint8_t *payload)
 
 void recv_election(uint8_t *payload)
 {
+    /* 
+        if v with w < m then
+        v forwards ELECT IN G(w) to its clockwise neighbor and sets m := w
+        v decides not to be the leader, if it has not done so already.
+        else if w > m and v has not been participating then
+        v sends message ELECTIN G(m) to its successor
+        else if v = w then
+        v sends message ELECT ED(v) to its clockwise neighbor
+    */
+
     uint8_t w = payload[MINID];
     uint8_t m = mydata->min_id;
     uint8_t v = mydata->my_id;
 
-    /* 
-if v with w < m then
-v forwards ELECT IN G(w) to its clockwise neighbor and sets m := w
-v decides not to be the leader, if it has not done so already.
-else if w > m and v has not been participating then
-v sends message ELECT IN G(m) to its successor
-else if v = w then
-v sends message ELECT ED(v) to its clockwise neighbor
+    if (w < v) 
+    {
+        mydata->readyToSendElection = 1;
+        mydata->min_id = w;
+    } else if (w > m && //what is participating)
+    {
+        mydata->readyToSendElection = 1;
+    } else if (v = w)
+    {
+        
+    } 
 
-    */
-
-printf("%d Receives %d from %d and my min id is %d\n", mydata->my_id, w,payload[MINID], m);
-
+    printf("%d Receives %d from %d and my min id is %d\n", mydata->my_id, w,payload[MINID], m);
 }
 
 
 void recv_elected(uint8_t *payload)
 {
+    /* if v receives a message ELECTED(w) with w != v then
+    v forwards ELECTED(w) to its clockwise neighbor and sets leader = w
+    end if */
+    uint8_t w = payload[MINID];
+    uint8_t m = mydata->min_id;
+    uint8_t v = mydata->my_id;
 
-/* if v receives a message ELECT ED(w) with w != v then
-v forwards ELECT ED(w) to its clockwise neighbor and sets leader = w
-end if */
+    if (w != v)  
+    {
+        mydata->readyToSendElected = 1;
+    }
+    
 }
 
 void message_rx(message_t *m, distance_measurement_t *d)
@@ -593,7 +605,7 @@ void loop()
             mydata->green = 0;
         }
     }
-    
+
     set_color(RGB(mydata->red, mydata->green, mydata->blue));
 
     mydata->loneliness++;
@@ -605,10 +617,14 @@ void loop()
     mydata->now++;
 }
 
-
+/**
+ * message_tx() is a callback for message transmission.
+ * The callback is triggered every time a message is scheduled for transmission.
+ * Transmission is roughly twice per second.
+ * Returns a pointer to the message that should be sent. If the pointer is null, then no message is sent.
+ * */
 message_t *message_tx()
 {
-    
     if (mydata->tail != mydata->head)   // Queue is not empty
     {
 #ifdef SIMULATOR
@@ -619,6 +635,10 @@ message_t *message_tx()
     return &mydata->nullmessage;
 }
  
+/** Callback for successfull message transmission. 
+ * It receives no parameters and returns no values.
+ * Returns no values.
+ * */
 void message_tx_success() {
     if (mydata->tail != mydata->head) {  // Queue is not empty
 #ifdef SIMULATOR
@@ -637,14 +657,18 @@ void message_tx_success() {
     }
 }
 
+/**
+ * The setup() function initializes various values from 
+ * Returns nothing. Just initializes various values
+ */
 void setup() {
     rand_seed(rand_hard());
-
-    mydata->my_id = rand_soft();
+    //mydata is an instance of the USERDATA structure from the ring.h file
+    mydata->my_id = rand_soft(); //Software random number generator. Assigns a random number to a bot's ID.
     
     mydata->state = AUTONOMOUS;
     mydata->my_left = mydata->my_right = mydata->my_id;
-    mydata->num_neighbors = 0;
+    mydata->num_neighbors = 0; //since this is a robot, 0 is false
     mydata->message_sent = 0,
     mydata->now = 0,
     mydata->nextShareSending = SHARING_TIME,
@@ -664,12 +688,15 @@ void setup() {
     mydata->blue = 0,
     mydata->send_token = 0;
 
+    /* New values that were added to the USERDATA structure in the ring.h file.
+        USERDATA is instantiated here as mydata. The readyToSendElection and readToSendElected
+        are set initialized as false */
     mydata->readyToSendElection = 0;
     mydata->readyToSendElected = 0;
     mydata->min_id = mydata->my_id;
 
     mydata->nullmessage.data[MSG] = NULL_MSG;
-    mydata->nullmessage.crc = message_crc(&mydata->nullmessage);
+    mydata->nullmessage.crc = message_crc(&mydata->nullmessage); //Checksum
     
     mydata->token = rand_soft() < 128  ? 1 : 0;
     //mydata->blue = mydata->token;
@@ -701,8 +728,18 @@ char *cb_botinfo(void)
 }
 #endif
 
+/**
+ * main() function runs the kilo_init function which initializes kilobot hardware
+ * This function initializes all hardware of the kilobots such as
+ * registering system interrupts and the initializing the messaging subsystem.
+ * kilo_start begins the kilobot event loop. The first argument supplied is a function
+ * that performs any USERDATA structure variable initializations. Second argument is a function 
+ * that will be called repeatedly to perform any computations required.
+ * Returns nothing. 
+ * */
 int main() {
-    kilo_init();
+    /*Initializes kilobot hardware. */
+    kilo_init(); 
     kilo_message_tx = message_tx;
     kilo_message_tx_success = message_tx_success;
     kilo_message_rx = message_rx;

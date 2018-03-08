@@ -1,4 +1,3 @@
-
 #define MAX_NUM_NEIGHBORS 10
 #define SHARING_TIME 10
 #define TOKEN_TIME 103
