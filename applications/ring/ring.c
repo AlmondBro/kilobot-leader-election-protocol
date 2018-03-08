@@ -676,15 +676,13 @@ void setup() {
     mydata->head = 0;
     mydata->tail = 0;
     mydata->copies = 0;
-    
-
-   
+       
 #ifdef SIMULATOR
     printf("Initializing %d %d\n", mydata->my_id, mydata->token);
 #endif
 
     mydata->message_sent = 1;
-}
+} 
 
 #ifdef SIMULATOR
 /* provide a text string for the simulator status bar about this bot */
