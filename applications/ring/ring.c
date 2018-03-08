@@ -22,9 +22,6 @@ char isQueueFull()
     return (mydata->tail +1) % QUEUE == mydata->head;
 }
 
-
-
-
 /* Helper function for setting motor speed smoothly
  */
 void smooth_set_motors(uint8_t ccw, uint8_t cw)
@@ -45,7 +42,6 @@ void smooth_set_motors(uint8_t ccw, uint8_t cw)
     // spin-up is done, now we set the real value
     set_motors(ccw, cw);
 }
-
 
 void set_motion(motion_t new_motion)
 {
@@ -284,6 +280,35 @@ void recv_move(uint8_t *payload)
     } */
 }
 
+void recv_election(uint8_t *payload)
+{
+    uint8_t w = payload[MINID];
+    uint8_t m = mydata->min_id;
+    uint8_t v = mydata->my_id;
+
+    /* 
+if v with w < m then
+v forwards ELECT IN G(w) to its clockwise neighbor and sets m := w
+v decides not to be the leader, if it has not done so already.
+else if w > m and v has not been participating then
+v sends message ELECT IN G(m) to its successor
+else if v = w then
+v sends message ELECT ED(v) to its clockwise neighbor
+
+    */
+
+printf("%d Receives %d from %d and my min id is %d\n", mydata->my_id, w,payload[MINID], m);
+
+}
+
+
+void recv_elected(uint8_t *payload)
+{
+
+/* if v receives a message ELECT ED(w) with w != v then
+v forwards ELECT ED(w) to its clockwise neighbor and sets leader = w
+end if */
+}
 
 void message_rx(message_t *m, distance_measurement_t *d)
 {
@@ -304,6 +329,14 @@ void message_rx(message_t *m, distance_measurement_t *d)
                 break;
             case MOVE:
                 recv_move(m->data);
+                break;
+            case ELECTION:
+                if (m->data[ID] == mydata->my_left)
+                    recv_election(m->data);
+                break;
+            case ELECTED:
+                if (m->data[ID] == mydata->my_left)
+                    recv_elected(m->data);
                 break;
         
         }
@@ -328,7 +361,11 @@ char enqueue_message(uint8_t m)
         //Sending Color Data 
 		mydata->message[mydata->tail].data[COLOR] = RGB(mydata->red,mydata->green,mydata->blue);
         //Sending Master Statues 
+
         mydata->message[mydata->tail].data[MASTER] = mydata->master;
+
+        if (m == ELECTED || m == ELECTION)
+            mydata->message[mydata->tail].data[MINID] = mydata->min_id;
     
         mydata->message[mydata->tail].type = NORMAL;
         mydata->message[mydata->tail].crc = message_crc(&mydata->message[mydata->tail]);
@@ -359,6 +396,8 @@ void send_joining()
             mydata->my_right = mydata->nearest_neighbors[i].right_id;
             mydata->my_left = mydata->nearest_neighbors[i].id;
             enqueue_message(JOIN);
+            mydata->readyToSendElection = 1;
+            //set the flag to true
 #ifdef SIMULATOR
             printf("Sending Joining %d right=%d left=%d\n", mydata->my_id, mydata->my_right, mydata->my_left);
 #endif
@@ -378,9 +417,30 @@ void send_sharing()
     }
 }
 
+void send_election()
+{
+    // Precondition
+    if (mydata->readyToSendElection && !isQueueFull())
+    {
+        // Sending
+        enqueue_message(ELECTION);
+        mydata->readyToSendElection = 0;
+        // effect:
+    }
+}
 
+void send_elected()
+{
+    // Precondition
+    if (mydata->readyToSendElected  && !isQueueFull())
+    {
+        // Sending
+        enqueue_message(ELECTED);
+        mydata->readyToSendElected = 0;
 
-
+        // effect:
+    }
+}
 
 void send_move()
 {
@@ -492,10 +552,13 @@ void remove_neighbor(nearest_neighbor_t lost)
     mydata->num_neighbors--;
 }
 
+
 void loop()
 {
     delay(30);
-    
+
+    send_election();
+    send_elected();
     //send_move();
     send_joining();
     send_sharing();
@@ -601,6 +664,10 @@ void setup() {
     mydata->blue = 0,
     mydata->send_token = 0;
 
+    mydata->readyToSendElection = 0;
+    mydata->readyToSendElected = 0;
+    mydata->min_id = mydata->my_id;
+
     mydata->nullmessage.data[MSG] = NULL_MSG;
     mydata->nullmessage.crc = message_crc(&mydata->nullmessage);
     
@@ -625,7 +692,8 @@ static char botinfo_buffer[10000];
 char *cb_botinfo(void)
 {
     char *p = botinfo_buffer;
-    p += sprintf (p, "ID: %d \n", kilo_uid);
+    p += sprintf (p, "ID: %d \n", mydata->my_id);
+    //p += sprintf (p, "ID: %d \n", kilo_uid);
     if (mydata->state == COOPERATIVE)
         p += sprintf (p, "State: COOPERATIVE\n");
     if (mydata->state == AUTONOMOUS)

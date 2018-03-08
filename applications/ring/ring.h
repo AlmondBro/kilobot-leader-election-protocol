@@ -1,9 +1,7 @@
 
-
 #define MAX_NUM_NEIGHBORS 10
 #define SHARING_TIME 10
 #define TOKEN_TIME 103
-
 
 //PAYLOAD
 #define MSG 0
@@ -17,14 +15,11 @@
 #define COLOR 7
 
 #define MASTER 8
-
+#define MINID 8
 
 #define ACTIVE 0
 
-
 #define QUEUE 2
-
-
 
 #ifndef M_PI
 #define M_PI 3.141592653589793238462643383279502884197169399375105820974944
@@ -34,7 +29,9 @@ typedef enum { NULL_MSG,
     SHARE,
     JOIN,
     LEAVE,
-    MOVE
+    MOVE,
+    ELECTION,
+    ELECTED
 } message_type;  // MESSAGES
 
 typedef enum {
@@ -104,6 +101,9 @@ typedef struct
     
     uint8_t loneliness;
 
+    uint8_t mydata; //mydata is here
     
-    
+    uint8_t readyToSendElection;
+    uint8_t readyToSendElected;
+    uint8_t min_id;
 } USERDATA;
