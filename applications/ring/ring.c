@@ -278,12 +278,12 @@ void recv_election(uint8_t *payload)
 {
     /* 
         if v with w < m then
-        v forwards ELECT IN G(w) to its clockwise neighbor and sets m := w
+        v forwards ELECTING(w) to its clockwise neighbor and sets m := w
         v decides not to be the leader, if it has not done so already.
         else if w > m and v has not been participating then
         v sends message ELECTIN G(m) to its successor
         else if v = w then
-        v sends message ELECT ED(v) to its clockwise neighbor
+        `v sends message ELECTED(v) to its clockwise neighbor
     */
 
     uint8_t w = payload[MINID];
@@ -328,10 +328,9 @@ void message_rx(message_t *m, distance_measurement_t *d)
     
     if (m->type == NORMAL && m->data[MSG] !=NULL_MSG)
     {
-        
-#ifdef SIMULATOR
-        //printf("%d Receives %d %d\n", mydata->my_id,  m->data[MSG], m->data[RECEIVER]);
-#endif
+        #ifdef SIMULATOR
+            //printf("%d Receives %d %d\n", mydata->my_id,  m->data[MSG], m->data[RECEIVER]);
+        #endif
    
         recv_sharing(m->data, dist);
         switch (m->data[MSG])
@@ -350,11 +349,9 @@ void message_rx(message_t *m, distance_measurement_t *d)
                 if (m->data[ID] == mydata->my_left)
                     recv_elected(m->data);
                 break;
-        
         }
     }
 }
-
 
 char enqueue_message(uint8_t m)
 {
