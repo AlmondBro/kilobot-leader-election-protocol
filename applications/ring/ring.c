@@ -301,7 +301,7 @@ void recv_election(uint8_t *payload)
         mydata->participating = 1;
     }  else if (v == w)
     {
-        printf("%d Leader ID", mydata->min_id);
+        printf("%d Leader ID\n", mydata->min_id);
         mydata->readyToSendElection = 0; //Set zero since we have found the know
         mydata->green = 255;
         mydata->red = 255;
