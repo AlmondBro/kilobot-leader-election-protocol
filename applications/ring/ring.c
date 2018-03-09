@@ -15,12 +15,21 @@
     REGISTER_USERDATA(USERDATA)
 #endif
 
+/**
+ * Returns true if the queue is full, false otherwise.<br>
+ * Takes no parameters.<br>
+ * Returns a boolean
+ */
 char isQueueFull()
 {
     return (mydata->tail +1) % QUEUE == mydata->head;
 }
 
-/* Helper function for setting motor speed smoothly
+/**
+ * Helper function for setting motor speed smoothly.<br>
+ * @param ccw is the first argument
+ * @param cw is the second argument<br>
+ * Returns no value
  */
 void smooth_set_motors(uint8_t ccw, uint8_t cw)
 {
@@ -41,6 +50,11 @@ void smooth_set_motors(uint8_t ccw, uint8_t cw)
     set_motors(ccw, cw);
 }
 
+/**
+ * Takes a motion_t input in order to move the robot.<br>
+ * @param new_motion is the first argument.<br>
+ * Returns no value
+ */
 void set_motion(motion_t new_motion)
 {
     switch(new_motion) {
@@ -216,6 +230,12 @@ void recv_sharing(uint8_t *payload, uint8_t distance)
 
 }
 
+/**
+ * Takes a node id and sends a joining payload
+ * to the other nodes.<br>
+ * @param *payload is the first argument.<br>
+ * Returns no values
+ */
 void recv_joining(uint8_t *payload)
 {
     //ignoring irrelevant messages
@@ -274,6 +294,12 @@ void recv_move(uint8_t *payload)
     } */
 }
 
+/**
+ * Parses ELECTING payloads and decides whether
+ * to send ELECTION to other nodes.<br>
+ * @param *payload is the first argument.<br>
+ * Returns no value.
+ */
 void recv_election(uint8_t *payload)
 {
     /* 
@@ -305,7 +331,12 @@ void recv_election(uint8_t *payload)
     printf("%d Receives %d from %d and my min id is %d\n", mydata->my_id, w,payload[MINID], m);
 }
 
-
+/**
+ * Determines if the ELECTED payload needs to be
+ * passed to a node with a lower id.<br>
+ * @param *payload is the first argument.<br>
+ * Does not return anything
+ */
 void recv_elected(uint8_t *payload)
 {
     /* if v receives a message ELECTED(w) with w != v then
@@ -322,6 +353,12 @@ void recv_elected(uint8_t *payload)
     
 }
 
+/**
+ * Parses all messages that were sent from other nodes.<br>
+ * @param message *m is the first parameter.<br>
+ * @param distance *d is the second parameter.<br>
+ * Does not return anything.
+ */
 void message_rx(message_t *m, distance_measurement_t *d)
 {
     uint8_t dist = estimate_distance(d);
@@ -390,6 +427,11 @@ char enqueue_message(uint8_t m)
 
 /**********************************/
 /**********************************/
+/**
+ * Sends a joining message to its neighboring nodes.<br>
+ * Does not take any parameters.<br>
+ * Does not return anything.
+ */
 void send_joining()
 {
     uint8_t i;
@@ -417,6 +459,9 @@ void send_joining()
     }
 }
 
+/**
+ * 
+ */
 void send_sharing()
 {
     // Precondition
@@ -429,6 +474,11 @@ void send_sharing()
     }
 }
 
+/**
+ * Sends an ELECTION message to another node.<br>
+ * Does not take any parameters.<br>
+ * Does not return anything
+ */
 void send_election()
 {
     // Precondition
@@ -441,6 +491,11 @@ void send_election()
     }
 }
 
+/**
+ * Sends an ELECTED message to another node.<br>
+ * Does not take any parameters.<br>
+ * Does not return anything.
+ */
 void send_elected()
 {
     // Precondition
@@ -508,8 +563,12 @@ void move(uint8_t tick)
     
 }
 
-//This functions works to reset the bots when they 
-// have broken the ring 
+/** 
+ * This functions works to reset the bots when they 
+ * have broken the ring.<br>
+ * Does not take any parameters.<br>
+ * Does not return anything
+ */
 void reset_self()
 {
 
@@ -525,8 +584,12 @@ void reset_self()
     
     mydata->master = 0;
 }
-//This function is called when message_recv_delay is > than X time
-//Specific to ring
+/**
+ * This function is called when message_recv_delay is > than X time
+ * It is specific to the ring
+ * @param lost is the first argument
+ * Does not return anything
+ */
 void remove_neighbor(nearest_neighbor_t lost)
 {
     uint8_t lost_bot_index;
@@ -564,7 +627,12 @@ void remove_neighbor(nearest_neighbor_t lost)
     mydata->num_neighbors--;
 }
 
-
+/**
+ * This method is called every tick and is used
+ * for updating the bots.<br>
+ * Takes no parameters.<br>
+ * Returns no values.
+ */
 void loop()
 {
     delay(30);
@@ -618,11 +686,11 @@ void loop()
 }
 
 /**
- * message_tx() is a callback for message transmission.
- * The callback is triggered every time a message is scheduled for transmission.
- * Transmission is roughly twice per second.
+ * message_tx() is a callback for message transmission.<br>
+ * The callback is triggered every time a message is scheduled for transmission.<br>
+ * Transmission is roughly twice per second.<br>
  * Returns a pointer to the message that should be sent. If the pointer is null, then no message is sent.
- * */
+ */
 message_t *message_tx()
 {
     if (mydata->tail != mydata->head)   // Queue is not empty
@@ -635,10 +703,11 @@ message_t *message_tx()
     return &mydata->nullmessage;
 }
  
-/** Callback for successfull message transmission. 
- * It receives no parameters and returns no values.
+/** 
+ * Callback for successfull message transmission. <br>
+ * It receives no parameters and returns no values.<br>
  * Returns no values.
- * */
+ */
 void message_tx_success() {
     if (mydata->tail != mydata->head) {  // Queue is not empty
 #ifdef SIMULATOR
@@ -734,9 +803,9 @@ char *cb_botinfo(void)
  * registering system interrupts and the initializing the messaging subsystem.
  * kilo_start begins the kilobot event loop. The first argument supplied is a function
  * that performs any USERDATA structure variable initializations. Second argument is a function 
- * that will be called repeatedly to perform any computations required.
+ * that will be called repeatedly to perform any computations required.<br>
  * Returns nothing. 
- * */
+ */
 int main() {
     /*Initializes kilobot hardware. */
     kilo_init(); 
