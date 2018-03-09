@@ -286,6 +286,7 @@ void recv_election(uint8_t *payload)
         `v sends message ELECTED(v) to its clockwise neighbor
     */
 
+    //May have to use the right-side
     uint8_t w = payload[MINID];
     uint8_t m = mydata->min_id;
     uint8_t v = mydata->my_id;
@@ -294,12 +295,17 @@ void recv_election(uint8_t *payload)
     {
         mydata->readyToSendElection = 1;
         mydata->min_id = w;
-    } else if (w > m && //what is participating)
+    } else if (w > m && mydata->participating == 0) // && what is participating)
     {
         mydata->readyToSendElection = 1;
-    } else if (v = w)
+        mydata->participating = 1;
+    }  else if (v = w)
     {
-        
+        printf("%d Leader ID", mydata->min_id);
+        mydata->readyToSendElection = 0; //Set zero since we have found the know
+        mydata->green = 0;
+        mydata->red = 0;
+        mydata->blue = 255;
     } 
 
     printf("%d Receives %d from %d and my min id is %d\n", mydata->my_id, w,payload[MINID], m);
@@ -317,7 +323,9 @@ void recv_elected(uint8_t *payload)
 
     if (w != v)  
     {
+        //Forwarding part -- set readyToSendElection to true
         mydata->readyToSendElected = 1;
+        mydata->readyToSendElection = 1;
     }
     
 }
@@ -690,6 +698,7 @@ void setup() {
         are set initialized as false */
     mydata->readyToSendElection = 0;
     mydata->readyToSendElected = 0;
+    mydata->participating = 0;
     mydata->min_id = mydata->my_id;
 
     mydata->nullmessage.data[MSG] = NULL_MSG;

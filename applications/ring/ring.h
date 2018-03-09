@@ -104,5 +104,8 @@ typedef struct
     
     uint8_t readyToSendElection;
     uint8_t readyToSendElected;
+
+    uint8_t participating; //Added this participating 
+
     uint8_t min_id;
 } USERDATA;
