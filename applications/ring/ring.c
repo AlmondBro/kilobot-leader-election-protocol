@@ -286,7 +286,6 @@ void recv_election(uint8_t *payload)
         `v sends message ELECTED(v) to its clockwise neighbor
     */
 
-    //May have to use the right-side
     uint8_t w = payload[MINID];
     uint8_t m = mydata->min_id;
     uint8_t v = mydata->my_id;
@@ -295,14 +294,16 @@ void recv_election(uint8_t *payload)
     {
         mydata->readyToSendElection = 1;
         mydata->min_id = w;
-    } else if (w > m && mydata->participating == 0) // && what is participating)
+    } else if (w > m && mydata->participating == 0) 
     {
         mydata->readyToSendElection = 1;
         mydata->participating = 1;
     }  else if (v == w)
     {
         printf("%d Leader ID\n", mydata->min_id);
-        mydata->readyToSendElection = 0; //Set zero since we have found the know
+        mydata->readyToSendElection = 0; //Set to zero since we have found the node with minmum ID.
+
+        //Max out RGB values for white color since white is the representation of the whole visible color spectrum
         mydata->green = 255;
         mydata->red = 255;
         mydata->blue = 255;
@@ -323,9 +324,9 @@ void recv_elected(uint8_t *payload)
 
     if (w != v)  
     {
-        //Forwarding part -- set readyToSendElection to true
+        //Forwarding part -- set readyToSendElected to true
         mydata->readyToSendElected = 1;
-        mydata->readyToSendElection = 1;
+       // mydata->readyToSendElection = 1;
     }
     
 }
@@ -609,7 +610,7 @@ void loop()
             mydata->red = 3;
             mydata->green = 0;
         }
-    }
+    } 
 
     set_color(RGB(mydata->red, mydata->green, mydata->blue));
 
