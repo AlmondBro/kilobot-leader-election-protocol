@@ -15,12 +15,21 @@
     REGISTER_USERDATA(USERDATA)
 #endif
 
+/**
+ * Returns true if the queue is full, false otherwise.<br>
+ * Takes no parameters.<br>
+ * Returns a boolean
+ */
 char isQueueFull()
 {
     return (mydata->tail +1) % QUEUE == mydata->head;
 }
 
-/* Helper function for setting motor speed smoothly
+/**
+ * Helper function for setting motor speed smoothly.<br>
+ * @param ccw is the first argument
+ * @param cw is the second argument<br>
+ * Returns no value
  */
 void smooth_set_motors(uint8_t ccw, uint8_t cw)
 {
@@ -41,6 +50,11 @@ void smooth_set_motors(uint8_t ccw, uint8_t cw)
     set_motors(ccw, cw);
 }
 
+/**
+ * Takes a motion_t input in order to move the robot.<br>
+ * @param new_motion is the first argument.<br>
+ * Returns no value
+ */
 void set_motion(motion_t new_motion)
 {
     switch(new_motion) {
@@ -68,6 +82,13 @@ char in_interval(uint8_t distance)
     return 0;
 }
 
+/**
+ * Returns true if the state of this node's
+ * neighbors is COOPERATIVE or AUTONOMUS,
+ * false otherwise.
+ * Takes no parameters.<br>
+ * Returns a boolean.
+ */
 char is_stabilized()
 {
     uint8_t i=0,j=0;
@@ -82,7 +103,10 @@ char is_stabilized()
     return j == mydata->num_neighbors;
 }
 
-// Search for id in the neighboring nodes
+/** Searches for id in the neighboring nodes
+ * @param id is the first parameter
+ * Returns a uint8_t
+ */
 uint8_t exists_nearest_neighbor(uint8_t id)
 {
     uint8_t i;
@@ -95,7 +119,10 @@ uint8_t exists_nearest_neighbor(uint8_t id)
 }
 
 
-// Search for id in the neighboring nodes
+/** Searches for id in the neighboring nodes.<br>
+ * Takes no parameters.<br>
+ * Returns an uint8_t
+ */
 uint8_t are_all_cooperative()
 {
     uint8_t i;
@@ -107,6 +134,11 @@ uint8_t are_all_cooperative()
     return 1;
 }
 
+/**
+ * Returns the node's left and right neighbor
+ * Takes no parameters
+ * Returns an uint8_t
+ */
 uint8_t get_nearest_two_neighbors()
 {
     uint8_t i, l, k;
@@ -156,6 +188,12 @@ uint8_t get_nearest_two_neighbors()
     return i;
 }
 
+/**
+ * Set's the node's color.<br>
+ * Takes R, G, and B values.<br>
+ * @param payload is the first param
+ * Returns no value
+ */
 void update_color(uint8_t *payload)
 {
     if (mydata->master == 0)
@@ -174,6 +212,12 @@ void update_color(uint8_t *payload)
     }
 }
 
+/**
+ * Receives payloads sent from neighboring nodes.<br>
+ * @param payload is the first parameter.
+ * @param distance is the second parameter.<br>
+ * Returns no values.
+ */
 void recv_sharing(uint8_t *payload, uint8_t distance)
 {
     if (payload[ID] == mydata->my_id  || payload[ID] == 0 || !in_interval(distance) ) return;
@@ -216,6 +260,13 @@ void recv_sharing(uint8_t *payload, uint8_t distance)
 
 }
 
+
+/**
+ * Takes a node id and sends a joining payload
+ * to the other nodes.<br>
+ * @param *payload is the first argument.<br>
+ * Returns no values
+ */
 void recv_joining(uint8_t *payload)
 {
     //ignoring irrelevant messages
@@ -274,6 +325,12 @@ void recv_move(uint8_t *payload)
     } */
 }
 
+/**
+ * Parses ELECTING payloads and decides whether
+ * to send ELECTION to other nodes.<br>
+ * @param *payload is the first argument.<br>
+ * Returns no value.
+ */
 void recv_election(uint8_t *payload)
 {
     /* 
@@ -312,7 +369,12 @@ void recv_election(uint8_t *payload)
     printf("%d Receives %d from %d and my min id is %d\n", mydata->my_id, w,payload[MINID], m);
 }
 
-
+/**
+ * Determines if the ELECTED payload needs to be
+ * passed to a node with a lower id.<br>
+ * @param *payload is the first argument.<br>
+ * Does not return anything
+ */
 void recv_elected(uint8_t *payload)
 {
     /* if v receives a message ELECTED(w) with w != v then
@@ -331,6 +393,12 @@ void recv_elected(uint8_t *payload)
     
 }
 
+/**
+ * Parses all messages that were sent from other nodes.<br>
+ * @param message *m is the first parameter.<br>
+ * @param distance *d is the second parameter.<br>
+ * Does not return anything.
+ */
 void message_rx(message_t *m, distance_measurement_t *d)
 {
     uint8_t dist = estimate_distance(d);
@@ -362,6 +430,12 @@ void message_rx(message_t *m, distance_measurement_t *d)
     }
 }
 
+/**
+ * Receives a message and stores it
+ * into a queue for processing.<br>
+ * @param m is the first parameter.<br>
+ * Returns a boolean if successful.
+ */
 char enqueue_message(uint8_t m)
 {
 #ifdef SIMULATOR
@@ -394,8 +468,11 @@ char enqueue_message(uint8_t m)
     return 0;
 }
 
-/**********************************/
-/**********************************/
+/**
+ * Sends a joining message to its neighboring nodes.<br>
+ * Does not take any parameters.<br>
+ * Does not return anything.
+ */
 void send_joining()
 {
     uint8_t i;
@@ -423,6 +500,11 @@ void send_joining()
     }
 }
 
+/**
+ * Sends the next message stored in the queue.<br>
+ * Takes no parameters.<br>
+ * Returns no value.
+ */
 void send_sharing()
 {
     // Precondition
@@ -435,6 +517,11 @@ void send_sharing()
     }
 }
 
+/**
+ * Sends an ELECTION message to another node.<br>
+ * Does not take any parameters.<br>
+ * Does not return anything
+ */
 void send_election()
 {
     // Precondition
@@ -447,6 +534,11 @@ void send_election()
     }
 }
 
+/**
+ * Sends an ELECTED message to another node.<br>
+ * Does not take any parameters.<br>
+ * Does not return anything.
+ */
 void send_elected()
 {
     // Precondition
@@ -460,6 +552,12 @@ void send_elected()
     }
 }
 
+/**
+ * Sends a token and enqueues a move
+ * if the node's state is COOPERATIVE.<br>
+ * Takes no parameters.<br>
+ * Returns no value.
+ */
 void send_move()
 {
     // Precondition:
@@ -478,6 +576,13 @@ void send_move()
 
 }
 
+/**
+ * Moves the node as long as its
+ * motion state is set to ACTIVE and its
+ * state is set to COOPERATIVE.
+ * @param tick is the first parameter.<br>
+ * Returns no value.
+ */
 void move(uint8_t tick)
 {
     // Precondition:
@@ -514,8 +619,12 @@ void move(uint8_t tick)
     
 }
 
-//This functions works to reset the bots when they 
-// have broken the ring 
+/** 
+ * This functions works to reset the bots when they 
+ * have broken the ring.<br>
+ * Does not take any parameters.<br>
+ * Does not return anything
+ */
 void reset_self()
 {
 
@@ -531,8 +640,13 @@ void reset_self()
     
     mydata->master = 0;
 }
-//This function is called when message_recv_delay is > than X time
-//Specific to ring
+
+/**
+ * This function is called when message_recv_delay is > than X time
+ * It is specific to the ring
+ * @param lost is the first argument
+ * Does not return anything
+ */
 void remove_neighbor(nearest_neighbor_t lost)
 {
     uint8_t lost_bot_index;
@@ -570,7 +684,12 @@ void remove_neighbor(nearest_neighbor_t lost)
     mydata->num_neighbors--;
 }
 
-
+/**
+ * This method is called every tick and is used
+ * for updating the bots.<br>
+ * Takes no parameters.<br>
+ * Returns no values.
+ */
 void loop()
 {
     delay(30);
