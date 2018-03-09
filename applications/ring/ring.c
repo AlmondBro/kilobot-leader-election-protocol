@@ -299,12 +299,12 @@ void recv_election(uint8_t *payload)
     {
         mydata->readyToSendElection = 1;
         mydata->participating = 1;
-    }  else if (v = w)
+    }  else if (v == w)
     {
         printf("%d Leader ID", mydata->min_id);
         mydata->readyToSendElection = 0; //Set zero since we have found the know
-        mydata->green = 0;
-        mydata->red = 0;
+        mydata->green = 255;
+        mydata->red = 255;
         mydata->blue = 255;
     } 
 
@@ -318,7 +318,7 @@ void recv_elected(uint8_t *payload)
     v forwards ELECTED(w) to its clockwise neighbor and sets leader = w
     end if */
     uint8_t w = payload[MINID];
-    uint8_t m = mydata->min_id;
+    //uint8_t m = mydata->min_id;
     uint8_t v = mydata->my_id;
 
     if (w != v)  
